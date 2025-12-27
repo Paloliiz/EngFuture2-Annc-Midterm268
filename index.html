@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ระบบประกาศผลสอบและแก้ตัว : ภาษาอังกฤษเพื่อการศึกษาต่อ2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&family=Prompt:wght@400;600;800&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e3a8a; --secondary: #3b82f6; --accent: #f59e0b;
+            --success: #10b981; --danger: #ef4444; --bg: #f8fafc;
+            --white: #ffffff; --text-dark: #1e293b;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Sarabun', sans-serif; background-color: var(--bg); margin: 0; padding: 0; color: var(--text-dark); user-select: none; -webkit-user-select: none; overflow-x: hidden; }
+
+        .screen { display: none; width: 100%; min-height: 100vh; background-color: var(--bg); padding-bottom: 60px; }
+        .screen.active { display: block; position: relative; animation: fadeIn 0.3s ease; }
+
+        .header { background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; padding: 45px 20px 65px; text-align: center; border-bottom-left-radius: 35px; border-bottom-right-radius: 35px; margin-bottom: -35px; }
+        .tag { font-family: 'Prompt'; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; display: inline-block; margin-bottom: 10px; }
+        .app-title { font-family: 'Prompt'; font-size: 1.6rem; font-weight: 800; margin: 0; line-height: 1.3; }
+        
+        .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 15px; z-index: 20; position: relative; }
+
+        .card { background: white; border-radius: 20px; padding: 30px 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 20px; text-align: center; }
+        .status-card { padding: 35px 20px; border-radius: 20px; text-align: center; margin-bottom: 25px; border: 2.5px solid transparent; }
+        .status-pass { background: #f0fdf4; border-color: #bbf7d0; color: #065f46; }
+        .status-fail { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+        .status-absent { background: #fffbeb; border-color: #fef3c7; color: #92400e; }
+        .score-big { font-size: 4rem; font-family: 'Prompt'; font-weight: 800; margin: 10px 0; }
+
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
+        .menu-btn { background: white; border: 1px solid #e2e8f0; padding: 25px 15px; border-radius: 20px; text-align: center; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .menu-btn:active { transform: scale(0.95); background: #f1f5f9; }
+        .menu-btn.full { grid-column: 1 / -1; background: #fff7ed; border-color: #fed7aa; }
+        .menu-label { font-family: 'Prompt'; font-size: 0.9rem; font-weight: 700; color: #334155; margin-top: 8px; display: block; }
+
+        /* University Hunter Groups */
+        .set-group { background: white; border-radius: 20px; padding: 20px; margin-bottom: 25px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .set-header { font-family: 'Prompt'; font-size: 1.1rem; font-weight: 800; color: white; background: var(--primary); padding: 8px 20px; border-radius: 30px; display: inline-block; margin-bottom: 15px; }
+        .uni-entry { border-bottom: 1px solid #f1f5f9; padding: 15px 0; text-align: left; }
+        .uni-entry:last-child { border: none; }
+        .uni-name { font-family: 'Prompt'; color: var(--primary); font-weight: 800; font-size: 1rem; margin-bottom: 5px; display: block; }
+        .uni-desc { font-size: 0.9rem; color: #475569; line-height: 1.5; }
+        .bullet { color: var(--accent); margin-right: 5px; }
+
+        /* Vocab Table */
+        .vocab-table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; border-radius: 15px; overflow: hidden; }
+        .vocab-table th { background: var(--primary); color: white; padding: 12px; font-family: 'Prompt'; font-size: 0.9rem; text-align: left; }
+        .vocab-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; text-align: left; }
+        .vocab-table tr:nth-child(even) { background: #f8fafc; }
+
+        /* Reading Skills Step */
+        .skill-step { background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; border-left: 6px solid var(--primary); text-align: left; position: relative; }
+        .step-num { position: absolute; right: 20px; top: 15px; font-size: 2rem; font-weight: 800; color: #f1f5f9; z-index: 1; }
+        .skill-content { position: relative; z-index: 2; }
+
+        /* Quiz Components */
+        .q-box { background: white; padding: 30px 20px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: left; }
+        .q-text { font-family: 'Prompt'; font-size: 1.2rem; font-weight: 700; color: var(--primary); line-height: 1.5; margin-bottom: 25px; }
+        .choice { display: block; width: 100%; padding: 18px; margin-bottom: 12px; background: white; border: 2px solid #e2e8f0; border-radius: 15px; text-align: left; font-size: 1rem; cursor: pointer; transition: 0.2s; font-family: 'Sarabun'; }
+        .feedback { padding: 20px; border-radius: 15px; margin-top: 20px; display: none; background: #f8fafc; border: 1px solid #e2e8f0; }
+
+        /* Slip & Watermark */
+        .slip { background: white; border: 6px double var(--primary); padding: 50px 20px; text-align: center; position: relative; border-radius: 20px; overflow: hidden; margin-top: 10px; }
+        .slip-overlay { position: absolute; top: 0; left: 0; width: 140%; height: 140%; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; z-index: 1; pointer-events: none; opacity: 0.15; transform: rotate(-25deg); }
+        .wm-text { font-weight: 900; font-size: 0.7rem; color: #000; margin: 12px; white-space: nowrap; font-family: 'Prompt'; }
+        .slip-content { position: relative; z-index: 10; }
+
+        .btn-action { display: block; width: 100%; padding: 18px; border-radius: 15px; border: none; font-family: 'Prompt'; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s; text-align: center; margin-top: 15px; }
+        .btn-blue { background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; }
+        .btn-gray { background: white; border: 2px solid #cbd5e1; color: #64748b; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div id="screen-login" class="screen active">
+        <div class="header">
+            <div class="tag">อ30212 : ภาษาอังกฤษเพื่อการศึกษาต่อ 2</div>
+            <h1 class="app-title">ประกาศผลสอบและระบบแก้ตัว</h1>
+        </div>
+        <div class="container">
+            <div class="card">
+                <label style="display:block; text-align:left; margin-bottom:10px; font-weight:bold; font-family:'Prompt';">เลขรหัสนักเรียน 5 หลัก:</label>
+                <input type="number" id="id-input" style="width:100%; padding:18px; border-radius:15px; border:2.5px solid #e2e8f0; text-align:center; font-size:1.6rem; margin-bottom:25px; font-family:'Prompt';" placeholder="รหัสประจำตัวนักเรียน">
+                <button class="btn-action btn-blue" onclick="handleLogin()">🔎 ตรวจสอบคะแนนสอบ</button>
+                <div id="quote-area" style="margin-top:25px; font-style:italic; color:#64748b; font-size:0.9rem; line-height:1.6;"></div>
+            </div>
+            <p style="text-align:center; color:#94a3b8; font-size:0.8rem;">ครูผู้สอน: <b>คุณครูศรุตา จันทเกตุ</b></p>
+        </div>
+    </div>
+
+    <div id="screen-dashboard" class="screen">
+        <div class="header">
+            <h2 id="display-name" style="margin:0; font-family:'Prompt';">-</h2>
+            <div id="display-id" style="opacity:0.8; font-size:0.95rem;">รหัสนักเรียน: -</div>
+        </div>
+        <div class="container">
+            <div id="status-pass" class="status-card status-pass" style="display:none;">
+                <div style="font-size:3.5rem;">🎓</div>
+                <h2 style="margin:0;">ยินดีด้วยค่ะ! หนูสอบผ่าน</h2>
+                <div class="score-big" id="score-pass-val">0 / 20</div>
+                <p>"ครูภูมิใจในความพยายามของหนูมาก ขอให้รักษามาตรฐานนี้ไว้นะจ๊ะ"</p>
+            </div>
+            <div id="status-fail" class="status-card status-fail" style="display:none;">
+                <div style="font-size:3.5rem;">💪</div>
+                <h2 style="margin:0;">พยายามอีกนิดนะคะ</h2>
+                <div class="score-big" id="score-fail-val">0 / 20</div>
+                <p>"ไม่เป็นไรนะจ๊ะลูก ทบทวนเนื้อหาแล้วมาสอบใหม่ ครูเชื่อว่าหนูทำได้ สู้ๆ!"</p>
+            </div>
+            <div id="status-absent" class="status-card status-absent" style="display:none;">
+                <div style="font-size:3.5rem;">⚠️</div>
+                <h2 style="margin:0;">สถานะ: ขาดสอบ</h2>
+                <p>"หนูพลาดการสอบปกติไป ติดต่อคุณครูศรุตาเพื่อขอสอบย้อนหลังนะจ๊ะ"</p>
+            </div>
+
+            <div id="menu-area" class="menu-grid" style="display:none;">
+                <div class="menu-btn full" onclick="startMasteryTest()">
+                    <div class="menu-icon">🎯</div>
+                    <span class="menu-label" style="color:#92400e;">เริ่มภารกิจสอบแก้ตัว (Mastery Test)<br><small>สุ่ม 40 ข้อ | เป้าหมายต้องได้ 32 คะแนนขึ้นไป</small></span>
+                </div>
+                <div class="menu-btn" onclick="changeScreen('screen-vocab')">
+                    <div class="menu-icon">📗</div>
+                    <span class="menu-label">Academic Vocab</span>
+                </div>
+                <div class="menu-btn" onclick="changeScreen('screen-skills')">
+                    <div class="menu-icon">📚</div>
+                    <span class="menu-label">Reading Skills</span>
+                </div>
+                <div class="menu-btn full" onclick="changeScreen('screen-uni-hunter')">
+                    <div class="menu-icon">🏛️</div>
+                    <span class="menu-label">University Hunter Summary (SET A-E)</span>
+                </div>
+            </div>
+
+            <button class="btn-action btn-gray" style="margin-top:30px;" onclick="location.reload()">🚪 ออกจากระบบ</button>
+            <p style="text-align:center; font-family:'Dancing Script', cursive; font-size:1.5rem; color:var(--primary); margin-top:30px;">With Love, Teacher Saruta</p>
+        </div>
+    </div>
+
+    <div id="screen-vocab" class="screen">
+        <div class="header"><h1 class="app-title">Academic Vocabulary</h1></div>
+        <div class="container">
+            <div class="card" style="padding: 10px;">
+                <table class="vocab-table">
+                    <thead>
+                        <tr><th>Word</th><th>Meaning</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><b>University</b></td><td>มหาวิทยาลัย</td></tr>
+                        <tr><td><b>Faculty</b></td><td>คณะ (เช่น คณะวิศวะ)</td></tr>
+                        <tr><td><b>Major</b></td><td>วิชาเอก (สาขาที่เรียน)</td></tr>
+                        <tr><td><b>Tuition Fee</b></td><td>ค่าเล่าเรียน</td></tr>
+                        <tr><td><b>Scholarship</b></td><td>ทุนการศึกษา</td></tr>
+                        <tr><td><b>Assignment</b></td><td>งานที่ได้รับมอบหมาย</td></tr>
+                        <tr><td><b>Deadline</b></td><td>กำหนดวันส่งงานสุดท้าย</td></tr>
+                        <tr><td><b>Lecturer</b></td><td>อาจารย์ผู้สอน/ผู้บรรยาย</td></tr>
+                        <tr><td><b>Degree</b></td><td>วุฒิการศึกษา / ปริญญา</td></tr>
+                        <tr><td><b>Dormitory</b></td><td>หอพักนักศึกษา</td></tr>
+                        <tr><td><b>Transcript</b></td><td>ใบระบุผลการเรียน</td></tr>
+                        <tr><td><b>Credits</b></td><td>หน่วยกิต</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <button class="btn-action btn-blue" onclick="changeScreen('screen-dashboard')">🏠 กลับหน้า Dashboard</button>
+        </div>
+    </div>
+
+    <div id="screen-skills" class="screen">
+        <div class="header"><h1 class="app-title">Reading Skills</h1></div>
+        <div class="container">
+            <div class="skill-step" style="border-left-color: var(--success);">
+                <div class="step-num">01</div>
+                <div class="skill-content">
+                    <h3 style="color:var(--success); margin:0 0 5px;">📖 Skimming (อ่านข้าม)</h3>
+                    <p style="font-size:0.9rem; color:#475569;">เพื่อหา <b>ใจความสำคัญ (Main Idea)</b> หรือภาพรวมบทความ<br>
+                    • อ่านชื่อเรื่อง (Title)<br>
+                    • อ่านประโยคแรก (Topic Sentence) ของย่อหน้า<br>
+                    • อ่านประโยคสุดท้าย (Concluding Sentence)<br>
+                    • สังเกตตัวหนา / รูปภาพ</p>
+                </div>
+            </div>
+
+            <div class="skill-step" style="border-left-color: var(--secondary);">
+                <div class="step-num">02</div>
+                <div class="skill-content">
+                    <h3 style="color:var(--secondary); margin:0 0 5px;">🔍 Scanning (อ่านเจาะ)</h3>
+                    <p style="font-size:0.9rem; color:#475569;">เพื่อหา <b>ข้อมูลเฉพาะ (Specific Detail)</b> เช่น ตัวเลข หรือ วันที่<br>
+                    • กำหนด Keyword ข้อมูลที่จะหา<br>
+                    • กวาดตาเร็วเป็นรูป Z หรือ F<br>
+                    • เมื่อเจอข้อมูล ให้ "หยุดอ่าน" เพื่อยืนยัน</p>
+                </div>
+            </div>
+            <button class="btn-action btn-blue" onclick="changeScreen('screen-dashboard')">🏠 กลับหน้า Dashboard</button>
+        </div>
+    </div>
+
+    <div id="screen-uni-hunter" class="screen">
+        <div class="header"><h1 class="app-title">University Hunter</h1></div>
+        <div class="container">
+            <div class="set-group">
+                <div class="set-header">SET A: จุฬาฯ / มธ. / มหิดล</div>
+                <div class="uni-entry">
+                    <span class="uni-name">Chulalongkorn University (CU)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> 1917 (เก่าที่สุด) <span class="bullet">●</span> ชมพู <span class="bullet">●</span> ปทุมวัน</div>
+                </div>
+                <div class="uni-entry">
+                    <span class="uni-name">Thammasat University (TU)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> 1934 <span class="bullet">●</span> เหลือง-แดง <span class="bullet">●</span> เด่นกฎหมาย</div>
+                </div>
+                <div class="uni-entry">
+                    <span class="uni-name">Mahidol University (MU)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> น้ำเงิน <span class="bullet">●</span> ศาลายา <span class="bullet">●</span> การแพทย์/ดนตรี</div>
+                </div>
+            </div>
+            <div class="set-group">
+                <div class="set-header" style="background:#7c3aed;">SET B: มช. / มข. / ม.อ.</div>
+                <div class="uni-entry">
+                    <span class="uni-name">Chiang Mai University (CMU)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> ส่วนภูมิภาคที่แรก <span class="bullet">●</span> ม่วง <span class="bullet">●</span> วิ่งขึ้นดอย</div>
+                </div>
+                <div class="uni-entry">
+                    <span class="uni-name">Khon Kaen University (KKU)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> ศูนย์กลางอีสาน <span class="bullet">●</span> ดินแดง <span class="bullet">●</span> กัลปพฤกษ์</div>
+                </div>
+                <div class="uni-entry">
+                    <span class="uni-name">Prince of Songkla University (PSU)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> แห่งแรกภาคใต้ <span class="bullet">●</span> หาดใหญ่ <span class="bullet">●</span> น้ำเงิน</div>
+                </div>
+            </div>
+            <div class="set-group">
+                <div class="set-header" style="background:#ea580c;">SET C: ลาดกระบัง / มศว / ม.บูรพา</div>
+                <div class="uni-entry">
+                    <span class="uni-name">KMITL (Ladkrabang)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> แสด <span class="bullet">●</span> รถไฟฟ้าในมอ <span class="bullet">●</span> เด่นวิศวะ</div>
+                </div>
+                <div class="uni-entry">
+                    <span class="uni-name">Srinakharinwirot University (SWU)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> อโศก/องครักษ์ <span class="bullet">●</span> เทา-แดง <span class="bullet">●</span> เด่นครู</div>
+                </div>
+                <div class="uni-entry">
+                    <span class="uni-name">Burapha University (BUU)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> บางแสน <span class="bullet">●</span> Aquarium <span class="bullet">●</span> ตะวันออก</div>
+                </div>
+            </div>
+            <div class="set-group">
+                <div class="set-header" style="background:#db2777;">SET D: ม.กรุงเทพ / ABAC / รังสิต</div>
+                <div class="uni-entry">
+                    <span class="uni-name">Bangkok University (BU)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> ตึกเพชร <span class="bullet">●</span> เด่นนิเทศ <span class="bullet">●</span> ความคิดสร้างสรรค์</div>
+                </div>
+                <div class="uni-entry">
+                    <span class="uni-name">Assumption University (ABAC)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> อินเตอร์แห่งแรก <span class="bullet">●</span> อังกฤษ 100% <span class="bullet">●</span> สวยเหมือนวัง</div>
+                </div>
+                <div class="uni-entry">
+                    <span class="uni-name">Rangsit University (RSU)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> 32 คณะ <span class="bullet">●</span> สายแพทย์/นักบิน <span class="bullet">●</span> เมืองเอก</div>
+                </div>
+            </div>
+            <div class="set-group">
+                <div class="set-header" style="background:#059669;">SET E: แม่ฟ้าหลวง / รามฯ / ม.นเรศวร</div>
+                <div class="uni-entry">
+                    <span class="uni-name">Mae Fah Luang University (MFU)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> สวยที่สุด <span class="bullet">●</span> เชียงราย <span class="bullet">●</span> อังกฤษล้วน</div>
+                </div>
+                <div class="uni-entry">
+                    <span class="uni-name">Ramkhamhaeng University (RU)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> Open University <span class="bullet">●</span> ตลาดวิชา <span class="bullet">●</span> 3,000 บาท</div>
+                </div>
+                <div class="uni-entry">
+                    <span class="uni-name">Naresuan University (NU)</span>
+                    <div class="uni-desc"><span class="bullet">●</span> พิษณุโลก <span class="bullet">●</span> สุขภาพ/พลังงานสะอาด</div>
+                </div>
+            </div>
+            <button class="btn-action btn-blue" onclick="changeScreen('screen-dashboard')">🏠 กลับหน้า Dashboard</button>
+        </div>
+    </div>
+
+    <div id="screen-quiz" class="screen">
+        <div class="header"><h1 class="app-title">Mastery Test</h1></div>
+        <div class="container">
+            <div class="q-box">
+                <div style="font-weight:bold; color:#94a3b8; margin-bottom:10px;">ข้อที่ <span id="q-idx-now">1</span> / 40</div>
+                <div id="q-txt-now" class="q-text">กำลังโหลดโจทย์...</div>
+                <div id="choices-area"></div>
+                <div id="feedback-area" class="feedback"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-result" class="screen">
+        <div class="header"><h1 class="app-title">Result</h1></div>
+        <div class="container">
+            <div id="res-fail" class="status-card status-fail" style="display:none;">
+                <h2>ไม่ผ่านเกณฑ์ 80%</h2>
+                <p>ทำได้ <span id="final-score-fail">0</span> / 40 ข้อ (ต้องการ 32 ข้อ)</p>
+                <button class="btn-action btn-blue" onclick="startMasteryTest()">🔄 ลองใหม่อีกครั้งนะจ๊ะลูก</button>
+                <button class="btn-action btn-gray" onclick="changeScreen('screen-dashboard')">🏠 กลับไปทบทวน</button>
+            </div>
+            <div id="res-pass-verify" class="card" style="display:none; text-align:left;">
+                <h2 style="color:var(--success); text-align:center;">เก่งมากค่ะ! ผ่านเกณฑ์แล้ว 🎉</h2>
+                <label style="font-weight:bold; display:block; margin-top:20px;">1. สรุปความรู้ที่หนูได้ในวันนี้ (สั้นๆ):</label>
+                <textarea id="sum-input" style="width:100%; height:80px; padding:15px; border-radius:12px; border:2px solid #ddd; font-family:'Sarabun'; margin-top:10px;"></textarea>
+                <p style="margin-top:15px;">2. ตอบคำถามความปลอดภัย: <b id="sec-q-txt" style="color:var(--primary);">...</b></p>
+                <input type="text" id="sec-a-input" style="width:100%; padding:15px; border-radius:12px; border:2px solid #ddd; text-align:center;" placeholder="คำตอบของคุณ">
+                <button class="btn-action btn-blue" style="margin-top:25px;" onclick="validateAndFinalize()">✅ รับใบประกาศผลแก้ตัว</button>
+            </div>
+            <div id="slip-box" class="slip" style="display:none;">
+                <div class="slip-overlay" id="wm-layer"></div>
+                <div class="slip-content">
+                    <h2 style="color:var(--primary); margin:0; font-weight:800; font-size:1.2rem;">CERTIFICATE OF REMEDIAL</h2>
+                    <p style="color:#64748b; font-size:0.8rem; font-weight:bold;">วิชาภาษาอังกฤษเพื่อการศึกษาต่อ 2 (อ30212)</p>
+                    <hr style="border:1px dashed #ddd; margin:20px 0;">
+                    <div style="text-align:left; font-size:0.9rem; line-height:2;">
+                        <b>ชื่อ-นามสกุล:</b> <span id="slip-name">-</span><br>
+                        <b>รหัสนักเรียน:</b> <span id="slip-id">-</span><br>
+                        <b>คะแนน Mastery:</b> <span id="slip-score">0</span> / 40 ข้อ
+                    </div>
+                    <div style="background:#f0fdf4; padding:15px; border-radius:10px; margin:15px 0; border:2px solid #bbf7d0;">
+                        <b style="color:var(--success); font-size:1.1rem;">แก้ไขผลการเรียนเรียบร้อย ✅</b>
+                    </div>
+                    <p style="font-size:0.7rem; color:#94a3b8; line-height:1.4;">ผู้ออกใบประกาศ: คุณครูศรุตา จันทเกตุ<br>วันเวลา: <span id="slip-time">-</span><br>Ref: <span id="slip-ref">-</span></p>
+                    <button class="btn-action btn-gray" style="margin-top:25px;" onclick="location.reload()">🚪 จบภารกิจ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const students = {
+            "11456": { "name": "นายวุฒิชัย ปาสา", "score": 18 },
+            "11478": { "name": "นายเจษฎา นุขุนทด", "score": 18 },
+            "11490": { "name": "นายสิรวิชญ์ คณาญาติ", "score": 17 },
+            "11513": { "name": "นายธนวัฒน์ ตรวจนอก", "score": 16 },
+            "11516": { "name": "นายปรเวช ประหูศรี", "score": 18 },
+            "11519": { "name": "นายรัฐพงศ์ พรมประดิษฐ์", "score": 16 },
+            "11520": { "name": "นายวารสาร สายศร", "score": 10 },
+            "11574": { "name": "นายกนกนันธ์ อำคาหล้า", "score": 8 },
+            "11575": { "name": "นายกฤษฎา แกมจินดา", "score": 13 },
+            "11578": { "name": "นายณัฐพล ปุราถาเน", "score": 14 },
+            "11588": { "name": "นายภาสิต พงศกุล", "score": 18 },
+            "11918": { "name": "นายคชาพล ครองยุติ", "score": 18 },
+            "12471": { "name": "นายเขมินทร์ หลาบหนองแสง", "score": 7 },
+            "12472": { "name": "นายณัฐวัฒน์ ด่านมณี", "score": 12 },
+            "12775": { "name": "นายสมเจตน์ พุทธสังข์", "score": 15 },
+            "11493": { "name": "นางสาวแก้วมณีฉัตร แสนทวีสุข", "score": 20 },
+            "11499": { "name": "นางสาวพัชรพร ดารักษ์", "score": 14 },
+            "11501": { "name": "นางสาวเพ็ญพิชชา สีทอง", "score": 13 },
+            "11533": { "name": "นางสาวยุพารัตน์ สีแดง", "score": 17 },
+            "11596": { "name": "นางสาวทิพวรรณ บุญคุ่ย", "score": 10 },
+            "11628": { "name": "นางสาวกมลเนตร ฤทธิเดช", "score": 11 },
+            "11632": { "name": "นางสาวทิพรัตน์ ร่มรื่น", "score": 17 },
+            "12473": { "name": "นางสาวชนาภา นาชัยภูมิ", "score": 17 },
+            "12474": { "name": "นางสาวณัฐวิภา จันสำรวม", "score": 13 },
+            "12476": { "name": "นางสาววรัญญา มะลิซ้อน", "score": 18 },
+            "11484": { "name": "นายธีรติ ประหูศรี", "score": 17 },
+            "11518": { "name": "นายภูมิพัฒณ์ สีนวล", "score": 7 },
+            "11523": { "name": "นายอนันต์ชัย พันชำนาญ", "score": 5 },
+            "11582": { "name": "นายนิคม ตราผักแว่น", "score": 6 },
+            "11618": { "name": "นายพีรพัฒน์ ไก่แก้ว", "score": 7 },
+            "11624": { "name": "นายอธิชา พลจอหอ", "score": 13 },
+            "11674": { "name": "นายรัตภูมิ แก่งกระโทก", "score": 15 },
+            "11957": { "name": "นายนิพิฐพนท์ ดาศรี", "score": 17 },
+            "12228": { "name": "นายภูริพัทธ์ เปี่ยมเจริญ", "score": 15 },
+            "12479": { "name": "นายทิฐินันท์ จาดนอก", "score": 12 },
+            "12480": { "name": "นายสุทธินนท์ สุทธิเดช", "score": 10 },
+            "11465": { "name": "นางสาวภัทรภรณ์ นาควัน", "score": 12 },
+            "11505": { "name": "นางสาววิยะฎา อุตรี", "score": 17 },
+            "11538": { "name": "นางสาววีระตา สืบสุนทร", "score": 18 },
+            "11567": { "name": "นางสาวสลิลทิพย์ เจริญดง", "score": 18 },
+            "11568": { "name": "นางสาวสุชาดา อนันต์นิล", "score": 10 },
+            "11569": { "name": "นางสาวสุพิชฌาย์ กำเหนิด", "score": 14 },
+            "11593": { "name": "นางสาวกมลรัตน์ พืชนะผล", "score": 7 },
+            "11604": { "name": "นางสาวอรวินท์ สุดสังข์", "score": 17 },
+            "11671": { "name": "นางสาวอิมวา แสนขวา", "score": 16 },
+            "11949": { "name": "นางสาวภัทรณนิดา กุลชัย", "score": 13 },
+            "12481": { "name": "นางสาวรุ้งลาวัลย์ สายสังข์", "score": 18 },
+            "12488": { "name": "นางสาวธัญรัตน์ แตงรอด", "score": 19 },
+            "12778": { "name": "นางสาวอภิญญา งามสม", "score": 18 }
+        };
+
+        const quotes = [
+            "Believe you can and you're halfway there.",
+            "The future depends on what you do today.",
+            "Failure is the opportunity to begin again more intelligently."
+        ];
+
+        // คลังข้อสอบ 80 ข้อเต็ม
+        const masterPool = [
+            {q: "Skimming มีเป้าหมายเพื่อหาอะไร?", o: ["ข้อมูลเจาะจง", "ใจความสำคัญ", "ตรวจคำผิด", "คำแปลศัพท์ยาก"], a: 1, h: "Skimming คือหาใจความหลักหรือภาพรวมค่ะ"},
+            {q: "Scanning คล้ายฟังก์ชันใดบนคอมฯ?", o: ["Ctrl+S", "Ctrl+C", "Ctrl+F", "Ctrl+V"], a: 2, h: "การหาข้อมูลเจาะจงเหมือน Search (Ctrl+F) คือ Scanning ค่ะ"},
+            {q: "Tuition Fee หมายถึงอะไร?", o: ["ทุนการศึกษา", "ค่าเล่าเรียน", "หอพัก", "เกรดเฉลี่ย"], a: 1, h: "Tuition Fee คือค่าเล่าเรียนค่ะ"},
+            {q: "Chulalongkorn University (CU) ก่อตั้งปี ค.ศ. ใด?", o: ["1934", "1917", "1964", "1911"], a: 1, h: "จุฬาฯ สถาปนาเมื่อปี 1917 ค่ะ"},
+            {q: "มหาวิทยาลัยใดมีฉายา 'Pink University'?", o: ["มธ.", "จุฬาฯ (CU)", "มหิดล", "มข."], a: 1, h: "สีชมพูเป็นสีประจำจุฬาลงกรณ์มหาวิทยาลัยค่ะ"},
+            {q: "ABAC ใช้ภาษาอะไรในการสอนเป็นหลัก?", o: ["ไทย", "จีน", "อังกฤษ", "ญี่ปุ่น"], a: 2, h: "ABAC สอนเป็นภาษาอังกฤษทุกวิชาค่ะ"},
+            {q: "Z หรือ F Pattern คือเทคนิคของทักษะใด?", o: ["Skimming", "Scanning", "Listening", "Speaking"], a: 1, h: "เป็นการกวาดสายตาแบบรวดเร็วของ Scanning ค่ะ"},
+            {q: "ส่วนใดของย่อหน้าที่มักสรุปใจความสำคัญที่สุด?", o: ["รูปภาพ", "Topic Sentence", "บรรณานุกรม", "เชิงอรรถ"], a: 1, h: "ประโยคแรกมักบอกประเด็นหลักใน Skimming ค่ะ"},
+            {q: "Ramkhamhaeng (RU) มีจุดเด่นคือ?", o: ["ค่าเทอมแพง", "Open University", "ตั้งอยู่ที่หาดใหญ่", "ไม่มีสาขา"], a: 1, h: "ม.รามฯ เป็นมหาวิทยาลัยเปิดและตลาดวิชาที่มีค่าเทอมถูกที่สุดค่ะ"},
+            {q: "สถาบันวิทยาศาสตร์ทางทะเล (Aquarium) อยู่ที่ใด?", o: ["ม.บูรพา", "มธ.", "จุฬาฯ", "มข."], a: 0, h: "ตั้งอยู่ในมหาลัยบูรพา บางแสน ค่ะ"},
+            {q: "Deadline ในบริบทเรียนต่อหมายถึงข้อใด?", o: ["วันเปิดเรียน", "วันสุดท้ายส่งงาน", "วันจบการศึกษา", "วันปฐมนิเทศ"], a: 1, h: "Deadline คือกำหนดวันสุดท้ายที่ต้องส่งงานค่ะ"},
+            {q: "ม.ธรรมศาสตร์ (TU) เด่นด้านคณะใด?", o: ["วิศวะ", "กฎหมาย/รัฐศาสตร์", "สถาปัตย์", "แพทย์"], a: 1, h: "มธ. มีชื่อเสียงสายกฎหมายและรัฐศาสตร์ค่ะ"},
+            {q: "วุฒิการศึกษาเมื่อเรียนจบเรียกว่าอะไร?", o: ["Major", "Degree", "Faculty", "Scholarship"], a: 1, h: "Degree คือปริญญาหรือวุฒิการศึกษาค่ะ"},
+            {q: "หากสแกนหาราคา คุณควรหา Clue ใด?", o: ["ชื่อคน", "เครื่องหมาย $ / Baht", "รูปภาพ", "เชิงอรรถ"], a: 1, h: "ราคาเงินมักมีหน่วยสกุลเงินกำกับเสมอค่ะ"},
+            {q: "ม.แม่ฟ้าหลวง (MFU) อยู่ที่จังหวัดใด?", o: ["พะเยา", "เชียงราย", "เชียงใหม่", "ตาก"], a: 1, h: "แม่ฟ้าหลวง เชียงราย ได้ชื่อว่าสวยที่สุดในไทยค่ะ"},
+            {q: "คำว่า Lecturer หมายถึงใคร?", o: ["นักศึกษา", "อาจารย์ผู้สอน", "ยาม", "ภารโรง"], a: 1, h: "Lecturer คืออาจารย์ผู้บรรยายในมหาวิทยาลัยค่ะ"},
+            {q: "มศว (SWU) มีวิทยาเขตที่ใดบ้าง?", o: ["รังสิต", "ประสานมิตร/องครักษ์", "บางแสน", "ศาลายา"], a: 1, h: "มศว มีที่ประสานมิตร(อโศก) และองครักษ์ค่ะ"},
+            {q: "สีประจำของ ม.ขอนแก่น (KKU) คือสีอะไร?", o: ["สีดินแดง (Brick Red)", "น้ำเงิน", "ชมพู", "ม่วง"], a: 0, h: "สีดินแดงเป็นสีประจำมหาลัยขอนแก่นค่ะ"},
+            {q: "ตึกรูปทรงเพชร (Diamond) เป็นของที่ใด?", o: ["ABAC", "ม.กรุงเทพ", "ม.รังสิต", "จุฬาฯ"], a: 1, h: "ตึกเพชรเป็นแลนด์มาร์คของ ม.กรุงเทพ ค่ะ"},
+            {q: "Scholarship หมายถึงอะไร?", o: ["ค่าเล่าเรียน", "ทุนการศึกษา", "ตารางสอบ", "วิชาเอก"], a: 1, h: "Scholarship คือทุนสนับสนุนการศึกษาค่ะ"},
+            {q: "หากสแกนหาเลข 4 หลัก มักเจอข้อมูลใด?", o: ["ราคา", "ชื่อคน", "ปี ค.ศ.", "วิชาที่เรียน"], a: 2, h: "เลข 4 หลักมักระบุถึง ปี พ.ศ. หรือ ค.ศ. ค่ะ"},
+            {q: "ทักษะใดควรใช้นิ้วชี้ช่วยเพื่อลดความล้า?", o: ["Skimming", "Scanning", "Writing", "Speaking"], a: 1, h: "การใช้นิ้วช่วยกวาดสายตาเร็วคือ Scanning ค่ะ"},
+            {q: "ม.นเรศวร (NU) ตั้งอยู่ที่จังหวัดใด?", o: ["พิจิตร", "พิษณุโลก", "แพร่", "นครสวรรค์"], a: 1, h: "นเรศวร อยู่ที่จังหวัดพิษณุโลกค่ะ"},
+            {q: "ม.มหิดล (MU) วิทยาเขตหลักอยู่ที่ใด?", o: ["รังสิต", "ศาลายา", "อโศก", "บางแสน"], a: 1, h: "วิทยาเขตหลักอยู่ที่ ศาลายา นครปฐม ค่ะ"},
+            {q: "ม.เชียงใหม่ (CMU) ใช้สีประจำคือสีอะไร?", o: ["น้ำเงิน", "ม่วง", "ชมพู", "เหลือง"], a: 1, h: "สีม่วงเป็นสีประจำมหาวิทยาลัยเชียงใหม่ค่ะ"},
+            {q: "Major ในระดับมหาลัยหมายถึงข้อใด?", o: ["โรงหนัง", "วิชาเอก / สาขาหลัก", "ปริญญา", "หอพัก"], a: 1, h: "Major คือวิชาเอกที่หนูเลือกศึกษาค่ะ"},
+            {q: "สถาบันใดมีสถานีรถไฟตั้งอยู่ใจกลางมอ?", o: ["มธ.", "ลาดกระบัง (KMITL)", "มหิดล", "จุฬาฯ"], a: 1, h: "สจล. มีสถานีรถไฟวิ่งผ่านกลางสถาบันค่ะ"},
+            {q: "ขั้นตอนแรกของ Skimming คืออะไร?", o: ["ดูรูป", "อ่านชื่อเรื่อง", "หาตัวเลข", "แปลไทย"], a: 1, h: "ต้องรู้หัวข้อหลักจากชื่อเรื่องก่อนเสมอค่ะ"},
+            {q: "ม.สงขลานครินทร์ (PSU) หลักอยู่ที่ใด?", o: ["ภูเก็ต", "หาดใหญ่", "ตรัง", "ปัตตานี"], a: 1, h: "วิทยาเขตหลักของ ม.อ. อยู่ที่หาดใหญ่ค่ะ"},
+            {q: "Faculty of Engineering คือคณะใด?", o: ["นิติศาสตร์", "วิศวกรรมศาสตร์", "อักษรศาสตร์", "แพทย์"], a: 1, h: "Engineering คือวิศวกรรมศาสตร์ค่ะ"},
+            {q: "KMITL มีสีประจำสถาบันคือสีอะไร?", o: ["แดง", "แสด", "ชมพู", "เทา"], a: 1, h: "สีแสดเป็นสีประจำของมอลาดกระบังค่ะ"},
+            {q: "Assignment หมายถึงข้อใด?", o: ["การสอบ", "งานที่ได้รับมอบหมาย", "วันปิดเทอม", "ทุนเรียนฟรี"], a: 1, h: "Assignment คือภาระงานหรือโครงการที่ครูสั่งค่ะ"},
+            {q: "มหาลัยใดสวยที่สุดและอังกฤษ 100%?", o: ["จุฬาฯ", "แม่ฟ้าหลวง (MFU)", "มข.", "รามฯ"], a: 1, h: "แม่ฟ้าหลวง เชียงราย สวยที่สุดและสอนเป็นอังกฤษค่ะ"},
+            {q: "Scanning เหมือนปุ่มใดบนคีย์บอร์ด?", o: ["Ctrl+C", "Ctrl+F", "Ctrl+V", "Alt+Tab"], a: 1, h: "Ctrl+F คือ Search ซึ่งตรงกับ Scanning ค่ะ"},
+            {q: "รหัสวิชานี้คือรหัสอะไร?", o: ["อ30211", "อ30212", "ท30212", "ค30212"], a: 1, h: "วิชาภาษาอังกฤษเพื่อการศึกษาต่อ 2 คือ อ30212 ค่ะ"},
+            {q: "Faculty หมายถึงอะไร?", o: ["วิชาเอก", "คณะ / หน่วยงาน", "หอพัก", "อาจารย์"], a: 1, h: "Faculty คือคณะที่ดูแลกลุ่มสาขาวิชาค่ะ"},
+            {q: "มหาลัยส่วนภูมิภาคแห่งแรกของไทย?", o: ["มข.", "มช.", "ม.อ.", "มนเรศวร"], a: 1, h: "มช. ก่อตั้งเป็นแห่งแรกในส่วนภูมิภาคค่ะ"},
+            {q: "Dormitory หมายถึงสถานที่ใด?", o: ["ห้องสมุด", "หอพัก", "โรงอาหาร", "ตึกเรียน"], a: 1, h: "Dormitory คือหอพักนักศึกษาค่ะ"},
+            {q: "ขั้นตอนสุดท้ายของ Scanning คือ?", o: ["อ่านทุุกคำ", "หยุดและอ่านรอบๆ", "แปลเป็นไทย", "ปิดหนังสือ"], a: 1, h: "เมื่อเจอข้อมูลต้องหยุดอ่านประโยครอบๆ เพื่อยืนยันค่ะ"},
+            {q: "ทักษะใดเหมาะกับการอ่านข่าวสั้นๆ?", o: ["Scanning", "Skimming", "Intensive", "Extensive"], a: 1, h: "การกวาดตาหาข่าวที่สนใจใช้ Skimming ค่ะ"},
+            {q: "Transcript คือเอกสารอะไร?", o: ["ใบปริญญา", "ใบบันทึกผลการเรียน", "ใบสมัคร", "ใบเสร็จ"], a: 1, h: "Transcript คือใบเกรดนั่นเองค่ะ"},
+            {q: "KMITL ตั้งอยู่ที่ย่านใดของกรุงเทพฯ?", o: ["สามย่าน", "ลาดกระบัง", "บางมด", "ปทุมวัน"], a: 1, h: "สจล. ตั้งอยู่ที่เขตลาดกระบังค่ะ"},
+            {q: "มหาวิทยาลัยที่ขึ้นชื่อเรื่อง 'ตลาดนัดอโศก'?", o: ["มธ.", "มศว (SWU)", "จุฬาฯ", "มหิดล"], a: 1, h: "มศว ประสานมิตร ตั้งอยู่ที่อโศกค่ะ"},
+            {q: "หากสแกนหาคำว่า 'Established in 1934' หมายถึงที่ใด?", o: ["จุฬาฯ", "ธรรมศาสตร์ (TU)", "มหิดล", "มข."], a: 1, h: "ธรรมศาสตร์ก่อตั้งปี 1934 ค่ะ"},
+            {q: "วิชาเอกเรียกภาษาอังกฤษว่าอะไร?", o: ["Minor", "Major", "Subject", "Course"], a: 1, h: "วิชาเอกคือ Major ค่ะ"},
+            {q: "ม.บูรพา ตั้งอยู่ในจังหวัดใด?", o: ["ระยอง", "ชลบุรี", "จันทบุรี", "ตราด"], a: 1, h: "ม.บูรพา อยู่ที่บางแสน จ.ชลบุรี ค่ะ"},
+            {q: "ทักษะใดต้องอาศัยการสังเกตตัวหนา (Bold)?", o: ["Scanning", "Skimming", "Note taking", "Translation"], a: 1, h: "ตัวหนาช่วยระบุประเด็นสำคัญใน Skimming ค่ะ"},
+            {q: "Credits หมายถึงอะไรในมหาลัย?", o: ["เงินกู้", "หน่วยกิต", "คำชม", "ชื่อเสียง"], a: 1, h: "Credits คือหน่วยกิตของแต่ละวิชาค่ะ"},
+            {q: "สีประจำของลาดกระบังคือสีอะไร?", o: ["แดง", "แสด (Orange)", "ชมพู", "เทา"], a: 1, h: "ลาดกระบังใช้สีแสดเป็นสีประจำค่ะ"},
+            {q: "Bachelor Degree คือปริญญาใบที่เท่าไหร่?", o: ["ตรี", "โท", "เอก", "บัตรฝึกงาน"], a: 0, h: "Bachelor คือปริญญาตรีค่ะ"},
+            {q: "มหาวิทยาลัยที่มีสีดินแดง (Brick Red)?", o: ["มข. (KKU)", "มช.", "ม.อ.", "มหิดล"], a: 0, h: "มข. ใช้สีดินแดงเป็นสีประจำมหาลัยค่ะ"},
+            {q: "หากต้องการหาราคาคอนโดในโบรชัวร์ ใช้ทักษะใด?", o: ["Skimming", "Scanning", "Detailed", "Proofreading"], a: 1, h: "การหาราคาเฉพาะเจาะจงใช้ Scanning ค่ะ"},
+            {q: "Enrollment หมายถึงขั้นตอนใด?", o: ["การจบการศึกษา", "การลงทะเบียนเรียน", "การลาออก", "การสอบเข้า"], a: 1, h: "Enrollment คือการลงทะเบียนเรียนค่ะ"},
+            {q: "มหาลัยธรรมศาสตร์ มีชื่อย่อภาษาอังกฤษว่า?", o: ["TU", "TMU", "THU", "TAS"], a: 0, h: "ธรรมศาสตร์ คือ TU ค่ะ"},
+            {q: "ทักษะใดใช้เมื่อคุณอ่าน Abstract ของงานวิจัย?", o: ["Scanning", "Skimming", "Writing", "Listening"], a: 1, h: "การอ่านสรุปย่อหน้าแรกใช้ Skimming ค่ะ"},
+            {q: "วิทยาเขต 'องครักษ์' อยู่จังหวัดอะไร?", o: ["กรุงเทพฯ", "นครนายก", "ชลบุรี", "นนทบุรี"], a: 1, h: "องครักษ์ อยู่ที่นครนายก (วิทยาเขตของ มศว) ค่ะ"},
+            {q: "ทุนเรียนฟรีเรียกว่าอะไร?", o: ["Tuition", "Scholarship", "Payment", "Grant"], a: 1, h: "คือ Scholarship ค่ะ"},
+            {q: "ม.นเรศวร (NU) เด่นเรื่องพลังงานประเภทใด?", o: ["น้ำมัน", "พลังงานสะอาด/แสงอาทิตย์", "ถ่านหิน", "ลม"], a: 1, h: "NU เด่นด้านพลังงานทดแทนและแสงอาทิตย์ค่ะ"},
+            {q: "การกวาดตาหา 'ชื่อเฉพาะ' ที่ขึ้นต้นตัวใหญ่ คือทักษะใด?", o: ["Skimming", "Scanning", "Drafting", "Editing"], a: 1, h: "หาคำเฉพาะเจาะจงใช้ Scanning ค่ะ"},
+            {q: "Diploma หมายถึงอะไร?", o: ["วิชาเอก", "วุฒิบัตร / ประกาศนียบัตร", "คณะ", "ปริญญาเอก"], a: 1, h: "คือใบประกาศนียบัตรค่ะ"},
+            {q: "มหาลัยใดสวยที่สุดในไทย บรรยากาศเหมือนรีสอร์ต?", o: ["CU", "MFU", "TU", "RU"], a: 1, h: "แม่ฟ้าหลวง เชียงราย สวยที่สุดค่ะ"},
+            {q: "Professor หมายถึงตำแหน่งใด?", o: ["นักเรียน", "ศาสตราจารย์", "ภารโรง", "เลขานุการ"], a: 1, h: "Professor คือศาสตราจารย์ค่ะ"},
+            {q: "ม.สงขลานครินทร์ มีวิทยาเขตรวมกี่แห่ง?", o: ["1", "5", "10", "15"], a: 1, h: "ม.อ. มี 5 วิทยาเขต (หาดใหญ่เป็นหลัก) ค่ะ"},
+            {q: "ทักษะใดไม่ต้องอ่านเนื้อหาละเอียดทุกคำ?", o: ["Skimming & Scanning", "Translation", "Deep Reading", "Intensive Reading"], a: 0, h: "ทั้งสองทักษะเน้นความเร็วและข้ามเนื้อหาไม่สำคัญค่ะ"},
+            {q: "GPA ย่อมาจากอะไร?", o: ["Grade Point Average", "Global Position Area", "Great Point Ace", "Group Page Area"], a: 0, h: "คือเกรดเฉลี่ยสะสมค่ะ"},
+            {q: "สีชมพูประจำจุฬาฯ มาจากสีประจำวันพระราชสมภพ ร.6 ใช่หรือไม่?", o: ["ใช่", "ไม่ใช่"], a: 0, h: "สีชมพูคือสีประจำ จุฬาฯ ค่ะ"},
+            {q: "ม.กรุงเทพ มีตึกรูปอะไรเป็นสัญลักษณ์?", o: ["ทรงกลม", "ทรงเพชร", "ทรงสี่เหลี่ยม", "ทรงเรือ"], a: 1, h: "คือตึกเพชร (Diamond Building) ค่ะ"},
+            {q: "รังสิต (RSU) มีคณะโดดเด่นรวมกี่คณะ?", o: ["10", "20", "32", "50"], a: 2, h: "ม.รังสิต มีคณะหลากหลายถึง 32 คณะค่ะ"},
+            {q: "Skimming ใช้เวลาอ่านอย่างไร?", o: ["ช้ามาก", "เร็วและข้ามๆ", "ละเอียดทุุกคำ", "ไม่อ่านเลย"], a: 1, h: "เน้นความเร็วเพื่อหาภาพรวมค่ะ"},
+            {q: "Campus หมายถึงอะไร?", o: ["ห้องเรียน", "บริเวณมหาวิทยาลัย", "หอพัก", "ปีกนก"], a: 1, h: "Campus คืออาณาบริเวณของสถาบันค่ะ"},
+            {q: "มหาลัยใดเป็น Open University?", o: ["CU", "RU", "MU", "BUU"], a: 1, h: "รามฯ คือตลาดวิชาหรือ Open Uni ค่ะ"},
+            {q: "Registrar คือหน่วยงานใด?", o: ["โรงอาหาร", "สำนักทะเบียน", "ห้องสมุด", "ยาม"], a: 1, h: "Registrar คือฝ่ายทะเบียนวัดผลค่ะ"},
+            {q: "มศว มีสีประจำคือสีอะไร?", o: ["เทา-แดง", "ชมพู", "น้ำเงิน", "แสด"], a: 0, h: "มศว ใช้สีเทา-แดงเป็นสีประจำค่ะ"},
+            {q: "หากต้องหา 'เบอร์โทร' ต้องใช้ทักษะใด?", o: ["Skimming", "Scanning", "Translation", "Writing"], a: 1, h: "ข้อมูลเฉพาะเจาะจงใช้ Scanning ค่ะ"},
+            {q: "Master Degree คือปริญญาใบที่เท่าไหร่?", o: ["ตรี", "โท", "เอก", "ประกาศนียบัตร"], a: 1, h: "Master คือปริญญาโทค่ะ"},
+            {q: "ม.แม่ฟ้าหลวง สอนเป็นภาษาอะไร?", o: ["ไทย", "จีน", "อังกฤษ", "เยอรมัน"], a: 2, h: "MFU สอนเป็นภาษาอังกฤษเป็นหลักค่ะ"},
+            {q: "Concluding Sentence บอกอะไรในย่อหน้า?", o: ["หัวข้อหลัก", "บทสรุป", "รายชื่อผู้เขียน", "วันเวลา"], a: 1, h: "คือประโยคสรุปความย่อหน้านั้นๆ ค่ะ"},
+            {q: "ม.มหิดล วิทยาเขตศาลายา อยู่จังหวัดอะไร?", o: ["กรุงเทพฯ", "นครปฐม", "นนทบุรี", "ปทุมธานี"], a: 1, h: "ศาลายา อยู่จังหวัดนครปฐมค่ะ"},
+            {q: "Scanning เหมือนฟังก์ชันใดในโปรแกรม Word?", o: ["Save", "Find", "Delete", "Print"], a: 1, h: "Find คือการค้นหาเฉพาะจุดเหมือน Scanning ค่ะ"},
+            {q: "ใครเป็นครูผู้สอนในรายวิชานี้?", o: ["ครูสุรีย์", "คุณครูศรุตา", "ครูนิพันธ์", "ครูวาสนา"], a: 1, h: "คุณครูศรุตา จันทเกตุ เป็นครูผู้สอนวิชานี้นะจ๊ะ ☺"}
+        ];
+
+        const secPool = [
+            {q: "มหาวิทยาลัยสีชมพูคือที่ไหน (พิมพ์ย่อ)?", a: ["CU", "จุฬาฯ"]},
+            {q: "Skimming หาอะไร (4 พยางค์)?", a: ["ใจความสำคัญ", "ข้อมูลเจาะจง"]},
+            {q: "Scanning เหมือนกดปุ่มอะไร?", a: ["F", "Ctrl+F", "CTRL+F", "ctrl+f", "Ctrl+F"]},
+            {q: "รหัสวิชาที่คุณเรียนคือ อ302...?", a: ["12", "อ30212"]}
+        ];
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const temp = arr[i]; arr[i] = arr[j]; arr[j] = temp;
+            }
+            return arr;
+        }
+
+        let user = null; let exam = []; let idx = 0; let score = 0; let curSecQ = null;
+
+        function changeScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+            const target = document.getElementById(id);
+            target.style.display = 'block';
+            target.classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        window.onload = function() {
+            document.getElementById('quote-area').innerText = quotes[Math.floor(Math.random() * quotes.length)];
+        };
+
+        function handleLogin() {
+            const val = document.getElementById('id-input').value.trim();
+            if (!students[val]) { alert("ไม่พบข้อมูลรหัสนักเรียนนี้ค่ะ ตรวจเลขอีกทีนะจ๊ะ"); return; }
+            user = { id: val, ...students[val] };
+            document.getElementById('display-name').innerText = user.name;
+            document.getElementById('display-id').innerText = "รหัสนักเรียน: " + val;
+            
+            changeScreen('screen-dashboard');
+            if (user.score === "ขาดสอบ") {
+                document.getElementById('status-absent').style.display = 'block';
+                document.getElementById('menu-area').style.display = 'none';
+            } else {
+                const net = user.score;
+                document.getElementById('status-absent').style.display = 'none';
+                if (net >= 10) {
+                    document.getElementById('status-pass').style.display = 'block';
+                    document.getElementById('status-fail').style.display = 'none';
+                    document.getElementById('score-pass-val').innerText = net + " / 20";
+                    document.getElementById('menu-area').style.display = 'none';
+                } else {
+                    document.getElementById('status-pass').style.display = 'none';
+                    document.getElementById('status-fail').style.display = 'block';
+                    document.getElementById('score-fail-val').innerText = net + " / 20";
+                    document.getElementById('menu-area').style.display = 'grid';
+                }
+            }
+        }
+
+        function startMasteryTest() {
+            exam = shuffle([...masterPool]).slice(0, 40);
+            idx = 0; score = 0;
+            changeScreen('screen-quiz');
+            renderQ();
+        }
+
+        function renderQ() {
+            const data = exam[idx];
+            document.getElementById('q-idx-now').innerText = idx + 1;
+            document.getElementById('q-txt-now').innerText = data.q;
+            const area = document.getElementById('choices-area');
+            const hint = document.getElementById('feedback-area');
+            area.innerHTML = ''; hint.style.display = 'none';
+
+            let items = data.o.map((t, i) => ({ t, is: i === data.a }));
+            items = shuffle(items);
+
+            items.forEach(item => {
+                const b = document.createElement('button');
+                b.className = 'choice';
+                b.innerText = item.t;
+                b.onclick = () => {
+                    document.querySelectorAll('.choice').forEach(btn => btn.disabled = true);
+                    if (item.is) {
+                        score++; b.style.background = '#dcfce7'; b.style.borderColor = '#10b981';
+                        hint.innerHTML = `<b style="color:var(--success)">✅ ถูกต้องค่ะ</b><br><small>${data.h}</small>`;
+                    } else {
+                        b.style.background = '#fee2e2'; b.style.borderColor = '#ef4444';
+                        hint.innerHTML = `<b style="color:var(--danger)">❌ ยังไม่ถูกนะจ๊ะ</b><br><small>${data.h}</small>`;
+                    }
+                    hint.style.display = 'block';
+                    const next = document.createElement('button');
+                    next.className = 'btn-action btn-blue'; next.innerText = (idx + 1 < 40) ? "ข้อต่อไป ➜" : "ดูผลคะแนน Mastery";
+                    next.onclick = () => {
+                        idx++; if (idx < 40) renderQ(); else finishQuiz();
+                    };
+                    hint.appendChild(next);
+                };
+                area.appendChild(b);
+            });
+        }
+
+        function finishQuiz() {
+            changeScreen('screen-result');
+            if (score >= 32) {
+                document.getElementById('res-fail').style.display = 'none';
+                document.getElementById('res-pass-verify').style.display = 'block';
+                curSecQ = secPool[Math.floor(Math.random() * secPool.length)];
+                document.getElementById('sec-q-txt').innerText = curSecQ.q;
+            } else {
+                document.getElementById('res-fail').style.display = 'block';
+                document.getElementById('final-score-fail').innerText = score;
+            }
+        }
+
+        function validateAndFinalize() {
+            const s = document.getElementById('sum-input').value.trim();
+            const a = document.getElementById('sec-a-input').value.trim();
+            if (s.length < 10) { alert("สรุปความรู้ให้ครูยาวกว่านี้อีกนิดนะจ๊ะลูก"); return; }
+            
+            // ปรับปรุงการตรวจสอบคำตอบให้ยืดหยุ่นขึ้น
+            let isCorrect = false;
+            if (Array.isArray(curSecQ.a)) {
+                isCorrect = curSecQ.a.some(ans => a.toLowerCase().includes(ans.toLowerCase()));
+            } else {
+                isCorrect = a.toLowerCase().includes(curSecQ.a.toLowerCase());
+            }
+
+            if (!isCorrect) { alert("คำตอบความปลอดภัยไม่ถูกต้องจ๊ะ ตรวจดูอีกทีนะ"); return; }
+            
+            document.getElementById('res-pass-verify').style.display = 'none';
+            document.getElementById('slip-box').style.display = 'block';
+            document.getElementById('slip-name').innerText = user.name;
+            document.getElementById('slip-id').innerText = user.id;
+            document.getElementById('slip-score').innerText = score;
+            document.getElementById('slip-time').innerText = new Date().toLocaleString('th-TH');
+            document.getElementById('slip-ref').innerText = "ア-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+            
+            const area = document.getElementById('wm-layer'); area.innerHTML = '';
+            for(let i=0; i<60; i++) { area.innerHTML += `<div class="wm-text">${user.id} - ${user.name}</div>`; }
+        }
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden && document.getElementById('screen-quiz').classList.contains('active')) {
+                alert("⛔ ระบบตรวจพบการพับหน้าจอ! ข้อสอบถูกรีเซ็ตเพื่อความโปร่งใสนะจ๊ะ");
+                startMasteryTest();
+            }
+        });
+    </script>
+</body>
+</html>
